@@ -1,0 +1,339 @@
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Old Age Home Management</title>
+
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 80%;
+      margin: auto;
+      margin-top: 30px;
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0px 0px 15px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+
+    input:focus {
+      border-color: #6c63ff;
+      outline: none;
+      box-shadow: 0px 0px 8px rgba(108,99,255,0.4);
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.3s;
+      margin-right: 5px;
+    }
+
+    .main-btn {
+      background: #6c63ff;
+      color: white;
+      width: 100%;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .main-btn:hover {
+      background: #574bdb;
+    }
+
+    .edit-btn {
+      background: #f7b731;
+      color: white;
+    }
+
+    .edit-btn:hover {
+      background: #e1a114;
+    }
+
+    .delete-btn {
+      background: #ff5252;
+      color: white;
+    }
+
+    .delete-btn:hover {
+      background: #e84141;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #f8f9ff;
+      padding: 15px;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .resident-info {
+      font-size: 16px;
+      color: #333;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      color: #444;
+      font-size: 14px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🏡 Old Age Home Management System</h1>
+
+  <div class="form-group">
+    <input id="name" placeholder="Resident Name">
+
+    <input id="dob" type="date">
+
+    <input id="gender" placeholder="Gender">
+
+    <input id="admission" type="date">
+
+    <input id="room" placeholder="Room ID (1-5)">
+
+    <input id="contact" placeholder="Contact ID (1-5)">
+  </div>
+
+  <button class="main-btn" onclick="add()">
+    Add / Update Resident
+  </button>
+
+  <hr>
+
+  <h2>Resident Records</h2>
+
+  <ul id="list"></ul>
+
+  <div class="footer">
+    Database Management System Project | Old Age Home Care
+  </div>
+
+</div>
+
+
+<script>
+
+const API = 'http://localhost:3000/residents';
+
+let editId = null;
+
+
+function load() {
+
+  fetch(API)
+    .then(res => res.json())
+    .then(data => {
+
+      const list = document.getElementById('list');
+
+      list.innerHTML = '';
+
+      data.forEach(r => {
+
+        list.innerHTML += `
+
+          <li>
+
+            <div class="resident-info">
+              <b>${r.name}</b><br>
+              Gender: ${r.gender} | Room: ${r.room_id}
+            </div>
+
+            <div class="btn-group">
+
+              <button class="edit-btn" onclick="edit(
+                ${r.resident_id},
+                '${r.name}',
+                '${r.date_of_birth ? r.date_of_birth.split('T')[0] : ''}',
+                '${r.gender}',
+                '${r.admission_date ? r.admission_date.split('T')[0] : ''}',
+                ${r.room_id},
+                ${r.primary_contact_id}
+              )">
+                Edit
+              </button>
+
+              <button class="delete-btn" onclick="del(${r.resident_id})">
+                Delete
+              </button>
+
+            </div>
+
+          </li>
+        `;
+      });
+    });
+}
+
+
+function add() {
+
+  const data = {
+
+    name: document.getElementById('name').value,
+
+    date_of_birth: document.getElementById('dob').value,
+
+    gender: document.getElementById('gender').value,
+
+    admission_date: document.getElementById('admission').value,
+
+    room_id: document.getElementById('room').value,
+
+    primary_contact_id: document.getElementById('contact').value
+  };
+
+
+  if (editId === null) {
+
+    fetch(API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.text())
+    .then(() => {
+      alert('Resident Added Successfully');
+      load();
+      clearFields();
+    });
+
+  }
+
+  else {
+
+    fetch(API + '/' + editId, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.text())
+    .then(() => {
+
+      alert('Resident Updated Successfully');
+
+      editId = null;
+
+      load();
+
+      clearFields();
+    });
+  }
+}
+
+
+function edit(id, name, dob, gender, admission, room, contact) {
+
+  editId = id;
+
+  document.getElementById('name').value = name;
+
+  document.getElementById('dob').value = dob;
+
+  document.getElementById('gender').value = gender;
+
+  document.getElementById('admission').value = admission;
+
+  document.getElementById('room').value = room;
+
+  document.getElementById('contact').value = contact;
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
+
+
+function del(id) {
+
+  fetch(API + '/' + id, {
+    method: 'DELETE'
+  })
+  .then(() => {
+    alert('Resident Deleted Successfully');
+    load();
+  });
+}
+
+
+function clearFields() {
+
+  document.getElementById('name').value = '';
+
+  document.getElementById('dob').value = '';
+
+  document.getElementById('gender').value = '';
+
+  document.getElementById('admission').value = '';
+
+  document.getElementById('room').value = '';
+
+  document.getElementById('contact').value = '';
+}
+
+
+load();
+
+</script>
+
+</body>
+</html>
